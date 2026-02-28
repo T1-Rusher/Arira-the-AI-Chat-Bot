@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>मॉड्यूलर वर्चुअल असिस्टेंट v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Space+Mono:wght@400;700&family=Noto+Sans+Devanagari:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060a10; --surface:#0d1520; --surface2:#111c2e; --border:#1a2d4a;
+  --accent:#00d4ff; --accent2:#ff6b35; --accent3:#7c3aed;
+  --green:#00ff88; --red:#ff4466; --yellow:#f59e0b;
+  --text:#e2eaf5; --text2:#7a9bbf;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans Devanagari',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,212,255,.03)1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03)1px,transparent 1px);
+  background-size:50px 50px;}
+body::after{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:800px;height:400px;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse,rgba(0,212,255,.06)0%,transparent 70%);}
+.container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1;}
+
+/* Header */
+header{text-align:center;padding:30px 0 16px;animation:fadeDown .8s ease;}
+.logo{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:6px;color:var(--accent);text-transform:uppercase;opacity:.7;margin-bottom:6px;}
+header h1{font-size:clamp(1.6rem,4vw,2.8rem);font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--accent)70%,var(--accent2)100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+header p{color:var(--text2);font-size:12px;margin-top:6px;font-family:'Space Mono',monospace;}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;padding:9px 16px;background:var(--surface);border:1px solid var(--border);border-radius:50px;margin:14px auto;max-width:800px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;}
+.pill-ok{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.3);}
+.pill-off{background:rgba(255,68,102,.1);color:var(--red);border:1px solid rgba(255,68,102,.3);}
+.pill-warn{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.3);}
+
+/* Backend banner */
+.backend-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-size:12px;font-family:'Space Mono',monospace;border:1px solid rgba(0,212,255,.25);background:rgba(0,212,255,.07);color:var(--text2);}
+.backend-banner.error{border-color:rgba(255,68,102,.3);background:rgba(255,68,102,.07);}
+
+/* Modules grid */
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:20px;}
+.module{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .3s,box-shadow .3s;animation:fadeUp .6s ease both;}
+.module:hover{transform:translateY(-3px);}
+.module:nth-child(1){animation-delay:.1s}.module:nth-child(2){animation-delay:.2s}
+.module:nth-child(3){animation-delay:.3s}.module:nth-child(4){animation-delay:.4s}
+.module:nth-child(5){animation-delay:.5s}.module:nth-child(6){animation-delay:.6s}
+.module:nth-child(7){animation-delay:.7s}
+
+.module-header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.module-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.icon-vision{background:linear-gradient(135deg,#0066ff22,#00d4ff22);border:1px solid #00d4ff44;}
+.icon-hearing{background:linear-gradient(135deg,#7c3aed22,#a855f722);border:1px solid #a855f744;}
+.icon-speaking{background:linear-gradient(135deg,#ff6b3522,#f59e0b22);border:1px solid #ff6b3544;}
+.icon-scraping{background:linear-gradient(135deg,#00ff8822,#10b98122);border:1px solid #00ff8844;}
+.icon-chat{background:linear-gradient(135deg,#ff6b3522,#7c3aed22);border:1px solid #a855f744;}
+.icon-memory{background:linear-gradient(135deg,#00d4ff22,#7c3aed22);border:1px solid #00d4ff44;}
+.icon-goal{background:linear-gradient(135deg,#f59e0b22,#ff6b3522);border:1px solid #f59e0b44;}
+
+.module-title h3{font-size:14px;font-weight:600;margin-bottom:2px;}
+.module-title span{font-family:'Space Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:1px;}
+.module-badge{padding:2px 9px;border-radius:20px;font-size:10px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:1px;}
+.badge-active{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3);}
+.badge-ready{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3);}
+
+.module-body{padding:16px;}
+
+/* Camera */
+.camera-view{position:relative;background:#000;border-radius:8px;overflow:hidden;aspect-ratio:16/9;border:1px solid var(--border);margin-bottom:12px;}
+#cameraFeed,#captureCanvas{width:100%;height:100%;object-fit:cover;}
+#captureCanvas{display:none;}
+.camera-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(0,0,0,.7);color:var(--text2);font-size:12px;}
+.corner-bracket{position:absolute;width:24px;height:24px;border-color:var(--accent);border-style:solid;border-width:0;opacity:.6;}
+.corner-bracket.tl{top:8px;left:8px;border-top-width:2px;border-left-width:2px;}
+.corner-bracket.tr{top:8px;right:8px;border-top-width:2px;border-right-width:2px;}
+.corner-bracket.bl{bottom:8px;left:8px;border-bottom-width:2px;border-left-width:2px;}
+.corner-bracket.br{bottom:8px;right:8px;border-bottom-width:2px;border-right-width:2px;}
+.analysis-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;line-height:1.6;color:var(--text);margin-bottom:12px;display:none;white-space:pre-wrap;}
+
+/* Audio viz */
+.audio-viz{display:flex;align-items:center;justify-content:center;gap:3px;height:50px;margin-bottom:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:8px;}
+.viz-bar{width:3px;border-radius:3px;background:var(--accent3);min-height:3px;transition:height .1s;}
+
+/* TTS */
+.tts-output{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;min-height:52px;font-size:12px;line-height:1.6;color:var(--text2);margin-bottom:10px;position:relative;overflow:hidden;}
+.tts-wave{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);transform:scaleX(0);transition:transform .5s;}
+.tts-wave.active{transform:scaleX(1);animation:waveSlide 1.5s ease infinite;}
+
+.voice-transcript{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;min-height:44px;margin-bottom:10px;line-height:1.6;}
+.transcript-label{font-family:'Space Mono',monospace;font-size:9px;color:var(--text2);letter-spacing:1px;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:red;animation:pulse 1s infinite;display:none;}
+
+/* Inputs */
+.voice-select,.url-input{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:12px;font-family:'Space Mono',monospace;outline:none;width:100%;margin-bottom:8px;transition:border-color .2s;}
+.voice-select:focus,.url-input:focus{border-color:var(--accent);}
+.url-input::placeholder{color:var(--text2);}
+.speech-textarea,.chat-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Noto Sans Devanagari',sans-serif;outline:none;resize:vertical;transition:border-color .2s;}
+.speech-textarea{min-height:60px;margin-bottom:9px;}
+.speech-textarea:focus{border-color:var(--accent2);}
+.scrape-result{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:140px;overflow-y:auto;font-size:11px;font-family:'Space Mono',monospace;color:var(--text2);line-height:1.7;}
+.scrape-result::-webkit-scrollbar{width:3px;}
+.scrape-result::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:none;border-radius:7px;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:.5px;cursor:pointer;transition:all .2s;outline:none;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000;box-shadow:0 0 12px rgba(0,212,255,.2);}
+.btn-primary:hover{box-shadow:0 0 22px rgba(0,212,255,.4);transform:translateY(-1px);}
+.btn-danger{background:linear-gradient(135deg,#ff4444,#cc2222);color:#fff;}
+.btn-purple{background:linear-gradient(135deg,var(--accent3),#9333ea);color:#fff;}
+.btn-orange{background:linear-gradient(135deg,var(--accent2),#e55a2b);color:#fff;}
+.btn-green{background:linear-gradient(135deg,var(--green),#00cc6a);color:#000;}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow),#d97706);color:#000;}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text2);}
+.btn-sm{padding:6px 11px;font-size:11px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+.btn-group{display:flex;gap:7px;flex-wrap:wrap;}
+
+/* Chat */
+.chat-module,.memory-module,.goal-module{grid-column:1/-1;}
+@media(min-width:900px){
+  .chat-module{grid-column:span 2;}
+  .memory-module{grid-column:span 1;}
+  .goal-module{grid-column:span 1;}
+}
+.chat-messages{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;height:240px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;}
+.chat-messages::-webkit-scrollbar{width:3px;}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.message{display:flex;gap:8px;animation:fadeUp .3s ease;}
+.message.user{flex-direction:row-reverse;}
+.msg-avatar{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.msg-avatar.ai{background:linear-gradient(135deg,var(--accent3),var(--accent));}
+.msg-avatar.user{background:linear-gradient(135deg,var(--accent2),#f59e0b);}
+.msg-content{max-width:82%;padding:9px 12px;border-radius:9px;font-size:12px;line-height:1.65;white-space:pre-wrap;}
+.message.ai .msg-content{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.15);color:var(--text);}
+.message.user .msg-content{background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.2);color:var(--text);}
+.chat-input-row{display:flex;gap:8px;}
+.chat-input{flex:1;height:42px;resize:none;border-radius:9px;}
+.chat-input:focus{border-color:var(--accent);}
+.thinking{display:flex;gap:5px;align-items:center;padding:9px 12px;}
+.dot-bounce{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:bounce 1.2s ease infinite;}
+.dot-bounce:nth-child(2){animation-delay:.2s}.dot-bounce:nth-child(3){animation-delay:.4s}
+
+/* Intent tag */
+.intent-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:10px;font-family:'Space Mono',monospace;background:rgba(124,58,237,.15);color:#a855f7;border:1px solid rgba(124,58,237,.3);margin-bottom:8px;}
+
+/* Memory panel */
+.memory-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.mem-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.mem-card .mem-val{font-size:22px;font-weight:700;font-family:'Space Mono',monospace;color:var(--accent);}
+.mem-card .mem-label{font-size:9px;color:var(--text2);letter-spacing:1px;font-family:'Space Mono',monospace;margin-top:3px;}
+.mem-items{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:120px;overflow-y:auto;font-size:11px;font-family:'Space Mono',monospace;color:var(--text2);line-height:1.6;}
+.mem-items::-webkit-scrollbar{width:3px;}
+.mem-items::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* Goals panel */
+.goal-input-row{display:flex;gap:8px;margin-bottom:10px;}
+.goal-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'Noto Sans Devanagari',sans-serif;outline:none;transition:border-color .2s;}
+.goal-input:focus{border-color:var(--yellow);}
+.goal-input::placeholder{color:var(--text2);}
+.goals-list{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:180px;overflow-y:auto;}
+.goals-list::-webkit-scrollbar{width:3px;}
+.goals-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.goal-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.goal-item:last-child{border-bottom:none;}
+.goal-desc{color:var(--text);margin-bottom:4px;}
+.progress-bar-outer{width:100%;height:4px;background:var(--border);border-radius:4px;overflow:hidden;}
+.progress-bar-inner{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--yellow),var(--accent2));transition:width .5s ease;}
+.goal-meta{display:flex;justify-content:space-between;margin-top:3px;font-size:10px;color:var(--text2);font-family:'Space Mono',monospace;}
+
+/* Plan panel */
+.plan-items{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;font-size:11px;color:var(--text2);}
+.plan-task{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px;}
+.plan-task:last-child{border-bottom:none;}
+.task-num{width:18px;height:18px;border-radius:4px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);font-family:'Space Mono',monospace;flex-shrink:0;}
+.task-done{background:rgba(0,255,136,.1);border-color:rgba(0,255,136,.3);color:var(--green);}
+
+/* Progress bar */
+.progress-bar{width:100%;height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;border-radius:2px;width:0%;transition:width .4s ease;}
+
+/* Scanning */
+.scanning::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanLine 1.5s linear infinite;box-shadow:0 0 8px var(--accent);}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes waveSlide{0%{background-position:-200px 0}100%{background-position:200px 0}}
+@keyframes scanLine{0%{top:-5%}100%{top:105%}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="logo">◈ Modular AI System v3.0 — No LLM • Pure Python ◈</div>
+  <h1>मॉड्यूलर वर्चुअल असिस्टेंट</h1>
+  <p>reasoning engine • memory system • goal planner • rule-based AI</p>
+</header>
+
+<div id="backendBanner" class="backend-banner">
+  <span>⏳</span><span id="backendMsg">Backend connect हो रहा है... (localhost:8000)</span>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span id="currentTime"></span>
+  <span style="color:var(--border)">|</span>
+  <span id="pill-reasoning" class="pill pill-ok">REASONING ✓</span>
+  <span id="pill-memory"    class="pill pill-ok">MEMORY ✓</span>
+  <span id="pill-stt"       class="pill pill-off">STT ✗</span>
+  <span id="pill-tts"       class="pill pill-off">TTS ✗</span>
+  <span id="pill-scrape"    class="pill pill-off">SCRAPE ✗</span>
+  <span id="memCount" style="font-size:10px;color:var(--text2)"></span>
+</div>
+
+<div class="modules-grid">
+
+  <!-- ══ VISION ══ -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-icon icon-vision">👁️</div>
+      <div class="module-title"><h3>विज़न मॉड्यूल</h3><span>CAMERA • RULE-BASED ANALYSIS</span></div>
+      <div class="module-badge badge-ready">READY</div>
+    </div>
+    <div class="module-body">
+      <div class="camera-view" id="cameraView">
+        <video id="cameraFeed" autoplay playsinline></video>
+        <canvas id="captureCanvas"></canvas>
+        <div class="corner-bracket tl"></div><div class="corner-bracket tr"></div>
+        <div class="corner-bracket bl"></div><div class="corner-bracket br"></div>
+        <div class="camera-overlay" id="cameraOverlay"><span style="font-size:26px">📷</span><span>कैमरा चालू करें</span></div>
+      </div>
+      <div id="visionAnalysis" class="analysis-box"></div>
+      <div class="btn-group">
+        <button class="btn btn-primary"  onclick="startCamera()">📷 चालू</button>
+        <button class="btn btn-orange"   id="captureBtn" onclick="captureAndAnalyze()" disabled>⚡ कैप्चर + विश्लेषण</button>
+        <button class="btn btn-danger btn-sm" onclick="stopCamera()" id="stopCamBtn" style="display:none">⏹</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HEARING ══ -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-icon icon-hearing">🎙️</div>
+      <div class="module-title"><h3>श्रवण मॉड्यूल</h3><span>MICROPHONE • WHISPER STT</span></div>
+      <div class="module-badge badge-ready">READY</div>
+    </div>
+    <div class="module-body">
+      <div class="audio-viz" id="audioViz"></div>
+      <div class="transcript-label"><div class="rec-dot" id="recDot"></div>TRANSCRIPT</div>
+      <div class="voice-transcript" id="voiceTranscript">Whisper STT यहाँ दिखेगा...</div>
+      <div class="btn-group">
+        <button class="btn btn-purple" id="listenBtn" onclick="toggleRecording()">🎙️ रिकॉर्ड</button>
+        <button class="btn btn-green btn-sm" onclick="useTranscriptInChat()">💬 Chat में</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearTranscript()">🗑️</button>
+      </div>
+      <div class="progress-bar" style="margin-top:8px">
+        <div class="progress-fill" id="sttProgress" style="background:linear-gradient(90deg,var(--accent3),#a855f7)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SPEAKING ══ -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-icon icon-speaking">🔊</div>
+      <div class="module-title"><h3>वाक् मॉड्यूल</h3><span>TEXT-TO-SPEECH • gTTS</span></div>
+      <div class="module-badge badge-active">ACTIVE</div>
+    </div>
+    <div class="module-body">
+      <div class="tts-output">
+        <span id="ttsText" style="color:var(--text2)">बोलने के लिए नीचे लिखें...</span>
+        <div class="tts-wave" id="ttsWave"></div>
+      </div>
+      <select class="voice-select" id="langSelect">
+        <option value="hi">🇮🇳 हिंदी (hi)</option>
+        <option value="en">🇺🇸 English (en)</option>
+        <option value="mr">🟠 मराठी (mr)</option>
+        <option value="bn">🟣 বাংলা (bn)</option>
+      </select>
+      <textarea class="speech-textarea" id="ttsInput" placeholder="यहाँ टेक्स्ट लिखें..."></textarea>
+      <div class="btn-group">
+        <button class="btn btn-orange" onclick="speakViaBackend()">🔊 बोलो</button>
+        <button class="btn btn-green btn-sm" onclick="speakBrowserFallback()">🌐 Browser</button>
+        <button class="btn btn-danger btn-sm" onclick="stopAudio()">⏹</button>
+      </div>
+      <div class="progress-bar" style="margin-top:8px">
+        <div class="progress-fill" id="ttsProgress" style="background:linear-gradient(90deg,var(--accent2),#f59e0b)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCRAPING ══ -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-icon icon-scraping">🌐</div>
+      <div class="module-title"><h3>डेटा संग्रह मॉड्यूल</h3><span>WEB SCRAPING • BS4 + HTTPX</span></div>
+      <div class="module-badge badge-ready">READY</div>
+    </div>
+    <div class="module-body">
+      <div style="display:flex;gap:7px;margin-bottom:8px">
+        <input type="url" class="url-input" id="scrapeUrl" placeholder="https://example.com" style="margin:0;flex:1" value="https://jsonplaceholder.typicode.com/posts/1">
+        <button class="btn btn-green" onclick="scrapeViaBackend()">⚡</button>
+      </div>
+      <div class="transcript-label">OUTPUT</div>
+      <div class="scrape-result" id="scrapeResult">URL डालें और ⚡ दबाएं...</div>
+      <div class="progress-bar" style="margin-top:6px">
+        <div class="progress-fill" id="scrapeProgress" style="background:linear-gradient(90deg,var(--green),#10b981)"></div>
+      </div>
+      <div class="btn-group" style="margin-top:8px">
+        <button class="btn btn-primary btn-sm" onclick="copyScraped()">📋 कॉपी</button>
+        <button class="btn btn-orange btn-sm" onclick="sendScrapedToChat()">💬 Chat</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearScrape()">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MEMORY STATUS ══ -->
+  <div class="module memory-module">
+    <div class="module-header">
+      <div class="module-icon icon-memory">🧠</div>
+      <div class="module-title"><h3>मेमोरी मॉड्यूल</h3><span>WORKING • SHORT-TERM • LONG-TERM</span></div>
+      <div class="module-badge badge-active">LIVE</div>
+    </div>
+    <div class="module-body">
+      <div class="memory-grid">
+        <div class="mem-card">
+          <div class="mem-val" id="memWorking">0</div>
+          <div class="mem-label">WORKING<br>MEMORY</div>
+        </div>
+        <div class="mem-card">
+          <div class="mem-val" id="memShort">0</div>
+          <div class="mem-label">SHORT<br>TERM</div>
+        </div>
+        <div class="mem-card">
+          <div class="mem-val" id="memLong">0</div>
+          <div class="mem-label">LONG<br>TERM</div>
+        </div>
+      </div>
+      <div class="transcript-label" style="margin-bottom:6px">RECENT ITEMS</div>
+      <div class="mem-items" id="memItems">Memory load हो रही है...</div>
+      <div class="btn-group" style="margin-top:10px">
+        <button class="btn btn-primary btn-sm" onclick="refreshMemory()">🔄 Refresh</button>
+        <button class="btn btn-ghost btn-sm" onclick="showMemorySearch()">🔍 Search</button>
+      </div>
+      <div id="memSearchRow" style="display:none;margin-top:8px">
+        <div style="display:flex;gap:7px">
+          <input type="text" class="url-input" id="memSearchInput" placeholder="search memory..." style="margin:0;flex:1">
+          <button class="btn btn-green btn-sm" onclick="searchMemory()">Go</button>
+        </div>
+        <div class="mem-items" id="memSearchResult" style="margin-top:6px;display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ GOAL + PLANNING ══ -->
+  <div class="module goal-module">
+    <div class="module-header">
+      <div class="module-icon icon-goal">🎯</div>
+      <div class="module-title"><h3>Goal & Planning मॉड्यूल</h3><span>GOAL SETTING • PLANNING SYSTEM</span></div>
+      <div class="module-badge badge-active">ACTIVE</div>
+    </div>
+    <div class="module-body">
+      <!-- Tab selector -->
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="btn btn-yellow btn-sm" id="tabGoal" onclick="switchTab('goal')" style="flex:1">🎯 Goals</button>
+        <button class="btn btn-ghost btn-sm" id="tabPlan" onclick="switchTab('plan')" style="flex:1">📋 Planning</button>
+      </div>
+
+      <!-- Goals tab -->
+      <div id="goalTab">
+        <div class="goal-input-row">
+          <input type="text" class="goal-input" id="goalInput" placeholder="नया goal लिखें...">
+          <select id="goalPriority" class="voice-select" style="width:auto;margin:0;padding:7px 8px">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <button class="btn btn-yellow btn-sm" onclick="addGoal()">+ Add</button>
+        </div>
+        <div class="transcript-label">ACTIVE GOALS</div>
+        <div class="goals-list" id="goalsList">
+          <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">कोई goal नहीं। ऊपर से add करें।</div>
+        </div>
+      </div>
+
+      <!-- Plan tab -->
+      <div id="planTab" style="display:none">
+        <div class="goal-input-row">
+          <input type="text" class="goal-input" id="planInput" placeholder="किस चीज़ का plan बनाएं?">
+          <select id="planComplexity" class="voice-select" style="width:auto;margin:0;padding:7px 8px">
+            <option value="simple">Simple</option>
+            <option value="medium" selected>Medium</option>
+            <option value="complex">Complex</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="createPlan()">📋 Plan</button>
+        </div>
+        <div class="transcript-label" id="planTitle">PLAN TASKS</div>
+        <div class="plan-items" id="planTasks">
+          <div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">कोई plan नहीं। ऊपर से बनाएं।</div>
+        </div>
+        <div id="planMeta" style="display:none;margin-top:8px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text2)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CHAT (full width) ══ -->
+  <div class="module chat-module">
+    <div class="module-header">
+      <div class="module-icon icon-chat">🤖</div>
+      <div class="module-title"><h3>AI चैट मॉड्यूल</h3><span>RULE-BASED + REASONING ENGINE + MEMORY — NO LLM</span></div>
+      <div class="module-badge badge-active">NO-LLM ✓</div>
+    </div>
+    <div class="module-body">
+      <div id="intentDisplay" style="margin-bottom:8px"></div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="message ai">
+          <div class="msg-avatar ai">🤖</div>
+          <div class="msg-content">नमस्ते! मैं rule-based + reasoning engine AI हूँ — कोई LLM नहीं!
+
+मैं कर सकता हूँ:
+🧮 गणित — '5 + 3', '10 * 7'
+⏰ समय/तारीख — 'समय क्या है?'
+💾 Memory — 'याद रखो: मेरा नाम राज है'
+🎯 Goals — 'goal set: Python सीखना'
+📋 Planning — 'plan बनाओ: website बनाना'
+🔍 Pattern — '2, 4, 6, 8 pattern?'</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" placeholder="यहाँ लिखें... (Enter = भेजें)" onkeydown="handleKey(event)"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()" id="sendBtn">भेजें →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+</div><!-- /container -->
+
+<script>
+const API = 'http://localhost:8000';
+let stream = null, mediaRecorder = null, audioChunks = [], isRecording = false;
+let currentAudio = null, vizInterval = null;
+let chatHistory = [];
+let currentPlanId = null;
+
+// ── Time ──────────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('hi-IN');
+}, 1000);
+
+// ── Audio viz ─────────────────────────────────────────────────────────────────
+const vizContainer = document.getElementById('audioViz');
+const bars = [];
+for (let i = 0; i < 24; i++) {
+  const b = document.createElement('div');
+  b.className = 'viz-bar';
+  b.style.cssText = `height:3px;background:hsl(${260+i*3},80%,65%)`;
+  vizContainer.appendChild(b);
+  bars.push(b);
+}
+function startViz() { vizInterval = setInterval(() => bars.forEach(b => b.style.height=(Math.random()*38+3)+'px'), 100); }
+function stopViz()  { clearInterval(vizInterval); bars.forEach(b => b.style.height='3px'); }
+
+// ── Backend health check ──────────────────────────────────────────────────────
+async function checkBackend() {
+  try {
+    const r = await fetch(`${API}/api/health`, {signal: AbortSignal.timeout(4000)});
+    const d = await r.json();
+    const m = d.modules;
+    document.getElementById('backendBanner').className = 'backend-banner';
+    document.getElementById('backendMsg').textContent = `✅ Backend connected — ${d.mode}`;
+
+    const setPill = (id, ok, label) => {
+      const el = document.getElementById(id);
+      el.className = 'pill ' + (ok ? 'pill-ok' : 'pill-off');
+      el.textContent = label + (ok ? ' ✓' : ' ✗');
+    };
+    setPill('pill-stt',    m.whisper_stt,  'STT');
+    setPill('pill-tts',    m.gtts_tts,     'TTS');
+    setPill('pill-scrape', m.bs4_scrape,   'SCRAPE');
+
+    refreshMemory();
+    refreshGoals();
+  } catch(e) {
+    document.getElementById('backendBanner').className = 'backend-banner error';
+    document.getElementById('backendMsg').textContent = '❌ Backend नहीं मिला → python main.py चलाएं';
+  }
+}
+checkBackend();
+setInterval(refreshMemory, 15000); // auto-refresh memory
+
+// ── MEMORY ────────────────────────────────────────────────────────────────────
+async function refreshMemory() {
+  try {
+    const r = await fetch(`${API}/api/memory/status`);
+    const d = await r.json();
+
+    document.getElementById('memWorking').textContent = d.working_memory.current_items + '/' + d.working_memory.capacity;
+    document.getElementById('memShort').textContent   = d.short_term.total_items || 0;
+    document.getElementById('memLong').textContent    = d.long_term.total_entries || 0;
+
+    const total = (d.short_term.total_items||0) + (d.long_term.total_entries||0);
+    document.getElementById('memCount').textContent = total + ' memories';
+
+    const items = d.recent_items || [];
+    const box = document.getElementById('memItems');
+    if (items.length) {
+      box.innerHTML = items.reverse().map(item => {
+        const val = typeof item.value === 'object' ? JSON.stringify(item.value).slice(0,60) : String(item.value).slice(0,60);
+        return `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <span style="color:var(--accent);font-size:9px">${item.key.slice(0,20)}</span>
+          <span style="color:var(--text2)"> → ${val}${val.length>=60?'...':''}</span>
+        </div>`;
+      }).join('');
+    } else {
+      box.innerHTML = '<div style="color:var(--text2);text-align:center;padding:10px">कोई memory नहीं अभी</div>';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function showMemorySearch() {
+  const row = document.getElementById('memSearchRow');
+  row.style.display = row.style.display === 'none' ? 'block' : 'none';
+}
+
+async function searchMemory() {
+  const q = document.getElementById('memSearchInput').value.trim();
+  if (!q) return;
+  try {
+    const r = await fetch(`${API}/api/memory/search/${encodeURIComponent(q)}`);
+    const d = await r.json();
+    const result = document.getElementById('memSearchResult');
+    const allResults = [...(d.short_term||[]), ...(d.long_term||[])];
+    if (allResults.length) {
+      result.style.display = 'block';
+      result.innerHTML = allResults.slice(0,5).map(item =>
+        `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+          <span style="color:var(--accent)">${item.key||''}</span>: ${String(item.value||'').slice(0,80)}
+        </div>`
+      ).join('');
+    } else {
+      result.style.display = 'block';
+      result.innerHTML = '<div style="color:var(--text2)">कुछ नहीं मिला।</div>';
+    }
+  } catch(e) {}
+}
+
+// ── GOALS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('goalTab').style.display = tab === 'goal' ? 'block' : 'none';
+  document.getElementById('planTab').style.display = tab === 'plan' ? 'block' : 'none';
+  document.getElementById('tabGoal').className = 'btn btn-sm ' + (tab==='goal'?'btn-yellow':'btn-ghost');
+  document.getElementById('tabPlan').className = 'btn btn-sm ' + (tab==='plan'?'btn-primary':'btn-ghost');
+}
+
+async function addGoal() {
+  const desc = document.getElementById('goalInput').value.trim();
+  const priority = document.getElementById('goalPriority').value;
+  if (!desc) { alert('Goal description लिखें!'); return; }
+  try {
+    const r = await fetch(`${API}/api/goal`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({description: desc, priority})
+    });
+    const d = await r.json();
+    document.getElementById('goalInput').value = '';
+    addMsg('ai', `🎯 Goal set: **${d.description}**\n🆔 ${d.goal_id} | Priority: ${d.priority}`);
+    refreshGoals();
+  } catch(e) { alert('Goal add नहीं हो पाया: ' + e.message); }
+}
+
+async function refreshGoals() {
+  try {
+    const r = await fetch(`${API}/api/goals`);
+    const d = await r.json();
+    renderGoals(d.goals || []);
+  } catch(e) {}
+}
+
+function renderGoals(goals) {
+  const list = document.getElementById('goalsList');
+  if (!goals.length) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:11px;text-align:center;padding:20px 0">कोई goal नहीं। ऊपर से add करें।</div>';
+    return;
+  }
+  list.innerHTML = goals.map(g => {
+    const prog = g.progress || 0;
+    const statusColor = g.status === 'completed' ? 'var(--green)' : g.status === 'in_progress' ? 'var(--accent)' : 'var(--text2)';
+    return `<div class="goal-item">
+      <div class="goal-desc">${g.description.slice(0,60)}${g.description.length>60?'...':''}</div>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${prog}%"></div></div>
+      <div class="goal-meta">
+        <span style="color:${statusColor}">${g.status}</span>
+        <span>${prog.toFixed(0)}% | P:${g.priority}</span>
+        <span style="display:flex;gap:4px">
+          <button onclick="updateGoalProgress('${g.goal_id}',${Math.min(100,prog+20)})" style="background:rgba(0,212,255,.15);border:none;color:var(--accent);cursor:pointer;border-radius:3px;padding:1px 5px;font-size:10px">+20%</button>
+          <button onclick="completeGoalUI('${g.goal_id}')" style="background:rgba(0,255,136,.15);border:none;color:var(--green);cursor:pointer;border-radius:3px;padding:1px 5px;font-size:10px">✓</button>
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function updateGoalProgress(goalId, progress) {
+  try {
+    await fetch(`${API}/api/goal/${goalId}/progress?progress=${progress}`, {method:'PUT'});
+    refreshGoals();
+  } catch(e) {}
+}
+
+async function completeGoalUI(goalId) {
+  try {
+    await fetch(`${API}/api/goal/${goalId}/complete`, {method:'PUT'});
+    addMsg('ai', `✅ Goal complete हो गया! 🎉`);
+    refreshGoals();
+  } catch(e) {}
+}
+
+// ── PLANNING ──────────────────────────────────────────────────────────────────
+async function createPlan() {
+  const goal = document.getElementById('planInput').value.trim();
+  const complexity = document.getElementById('planComplexity').value;
+  if (!goal) { alert('Plan किसके लिए बनाएं?'); return; }
+  try {
+    const r = await fetch(`${API}/api/plan`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({goal, complexity})
+    });
+    const d = await r.json();
+    currentPlanId = d.plan_id;
+    document.getElementById('planTitle').textContent = `PLAN: ${goal.slice(0,30).toUpperCase()}`;
+    document.getElementById('planMeta').style.display = 'block';
+    document.getElementById('planMeta').textContent = `Tasks: ${d.tasks_created} | ⏱️ ~${d.estimated_time} min | ID: ${d.plan_id}`;
+
+    const tasks = d.tasks || [];
+    document.getElementById('planTasks').innerHTML = tasks.map((t, i) =>
+      `<div class="plan-task">
+        <div class="task-num" id="taskNum_${i}">${i+1}</div>
+        <span>${t}</span>
+      </div>`
+    ).join('');
+
+    addMsg('ai', `📋 Plan बना दिया!\n🎯 Goal: ${goal}\n📊 ${d.tasks_created} tasks | ~${d.estimated_time} min`);
+    document.getElementById('planInput').value = '';
+    switchTab('plan');
+  } catch(e) { alert('Plan नहीं बना: ' + e.message); }
+}
+
+// ── CAMERA ────────────────────────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('cameraFeed').srcObject = stream;
+    document.getElementById('cameraOverlay').style.display = 'none';
+    document.getElementById('captureBtn').disabled = false;
+    document.getElementById('stopCamBtn').style.display = 'inline-flex';
+    document.getElementById('cameraView').classList.add('scanning');
+  } catch(e) { alert('Camera permission दें।'); }
+}
+
+async function captureAndAnalyze() {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.getElementById('captureCanvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const imgB64 = canvas.toDataURL('image/jpeg', 0.8);
+
+  const box = document.getElementById('visionAnalysis');
+  box.style.display = 'block';
+  box.textContent = '🔍 Rule-based analysis हो रही है...';
+
+  try {
+    const r = await fetch(`${API}/api/vision`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({image_base64: imgB64})
+    });
+    const d = await r.json();
+    box.textContent = d.reply || d.detail;
+    addMsg('ai', '📸 Image analyzed: ' + (d.reply||'').split('\n')[2]?.trim() || '');
+    refreshMemory();
+  } catch(e) {
+    box.textContent = '❌ Vision error: ' + e.message;
+  }
+}
+
+function stopCamera() {
+  if(stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  document.getElementById('cameraOverlay').style.display='flex';
+  document.getElementById('captureBtn').disabled=true;
+  document.getElementById('stopCamBtn').style.display='none';
+  document.getElementById('cameraView').classList.remove('scanning');
+}
+
+// ── STT ───────────────────────────────────────────────────────────────────────
+async function toggleRecording() {
+  if (isRecording) stopRecording(); else startRecording();
+}
+
+async function startRecording() {
+  try {
+    const micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder = new MediaRecorder(micStream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = sendAudioToWhisper;
+    mediaRecorder.start();
+    isRecording = true;
+    startViz();
+    document.getElementById('listenBtn').textContent = '⏹ रोकें';
+    document.getElementById('listenBtn').className = 'btn btn-danger';
+    document.getElementById('recDot').style.display = 'block';
+    document.getElementById('voiceTranscript').textContent = '🎙️ रिकॉर्ड हो रहा है...';
+  } catch(e) { alert('Microphone permission दें।'); }
+}
+
+function stopRecording() {
+  if(mediaRecorder) { mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); }
+  isRecording = false; stopViz();
+  document.getElementById('listenBtn').textContent = '🎙️ रिकॉर्ड';
+  document.getElementById('listenBtn').className = 'btn btn-purple';
+  document.getElementById('recDot').style.display = 'none';
+  document.getElementById('sttProgress').style.width = '30%';
+}
+
+async function sendAudioToWhisper() {
+  document.getElementById('voiceTranscript').textContent = '⏳ Whisper processing...';
+  document.getElementById('sttProgress').style.width = '60%';
+  const blob = new Blob(audioChunks, {type:'audio/webm'});
+  const form = new FormData();
+  form.append('audio', blob, 'recording.webm');
+  try {
+    const r = await fetch(`${API}/api/stt`, {method:'POST', body:form});
+    const d = await r.json();
+    const text = d.text || d.detail || '';
+    document.getElementById('voiceTranscript').textContent = text || '(कुछ नहीं सुना)';
+    document.getElementById('sttProgress').style.width = '100%';
+    setTimeout(() => document.getElementById('sttProgress').style.width='0%', 800);
+  } catch(e) {
+    document.getElementById('voiceTranscript').textContent = '❌ STT error: ' + e.message;
+    document.getElementById('sttProgress').style.width = '0%';
+  }
+}
+
+function clearTranscript() { document.getElementById('voiceTranscript').textContent = 'Whisper STT यहाँ दिखेगा...'; }
+function useTranscriptInChat() {
+  const t = document.getElementById('voiceTranscript').textContent;
+  if (t && !t.startsWith('Whisper')) document.getElementById('chatInput').value = t;
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────────
+async function speakViaBackend() {
+  const text = document.getElementById('ttsInput').value.trim();
+  const lang = document.getElementById('langSelect').value;
+  if (!text) { alert('कुछ लिखें!'); return; }
+  document.getElementById('ttsText').textContent = text;
+  document.getElementById('ttsText').style.color = 'var(--text)';
+  document.getElementById('ttsWave').classList.add('active');
+  document.getElementById('ttsProgress').style.width = '40%';
+  try {
+    const r = await fetch(`${API}/api/tts`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text, lang})
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    if(currentAudio) currentAudio.pause();
+    currentAudio = new Audio(url);
+    currentAudio.play();
+    document.getElementById('ttsProgress').style.width = '100%';
+    currentAudio.onended = () => {
+      document.getElementById('ttsWave').classList.remove('active');
+      setTimeout(() => document.getElementById('ttsProgress').style.width='0%', 500);
+    };
+  } catch(e) {
+    document.getElementById('ttsWave').classList.remove('active');
+    document.getElementById('ttsProgress').style.width='0%';
+    speakBrowserFallback();
+  }
+}
+
+function speakBrowserFallback() {
+  const text = document.getElementById('ttsInput').value.trim();
+  if (!text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = document.getElementById('langSelect').value + '-IN';
+  speechSynthesis.speak(u);
+}
+
+function stopAudio() {
+  if(currentAudio) { currentAudio.pause(); currentAudio=null; }
+  speechSynthesis.cancel();
+  document.getElementById('ttsWave').classList.remove('active');
+  document.getElementById('ttsProgress').style.width='0%';
+}
+
+// ── SCRAPING ──────────────────────────────────────────────────────────────────
+let scrapedText = '';
+async function scrapeViaBackend() {
+  const url = document.getElementById('scrapeUrl').value.trim();
+  if (!url) { alert('URL डालें!'); return; }
+  const result = document.getElementById('scrapeResult');
+  const prog   = document.getElementById('scrapeProgress');
+  result.textContent = '⏳ Scraping...';
+  prog.style.width = '30%';
+  try {
+    const r = await fetch(`${API}/api/scrape`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    prog.style.width = '80%';
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Error');
+    const content = typeof d.data === 'object' ? JSON.stringify(d.data, null, 2) : d.data;
+    scrapedText = content;
+    result.textContent = `[${d.type.toUpperCase()}]\n\n${content}`;
+    prog.style.width = '100%';
+    setTimeout(() => prog.style.width='0%', 800);
+  } catch(e) {
+    result.textContent = '❌ ' + e.message;
+    prog.style.width='0%';
+  }
+}
+
+function copyScraped() { navigator.clipboard.writeText(document.getElementById('scrapeResult').textContent); }
+function clearScrape()  { scrapedText=''; document.getElementById('scrapeResult').textContent='URL डालें...'; }
+function sendScrapedToChat() {
+  if(scrapedText) document.getElementById('chatInput').value = 'इस data का सारांश दें:\n\n' + scrapedText.slice(0,500);
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addMsg(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'message ' + role;
+  const av  = document.createElement('div'); av.className='msg-avatar '+role; av.textContent=role==='ai'?'🤖':'👤';
+  const con = document.createElement('div'); con.className='msg-content'; con.textContent=text;
+  div.appendChild(av); div.appendChild(con);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addThinking() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div'); div.className='message ai'; div.id='thinking';
+  const av  = document.createElement('div'); av.className='msg-avatar ai'; av.textContent='🤖';
+  const con = document.createElement('div'); con.className='msg-content thinking';
+  con.innerHTML='<div class="dot-bounce"></div><div class="dot-bounce"></div><div class="dot-bounce"></div>';
+  div.appendChild(av); div.appendChild(con);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  addMsg('user', text);
+  addThinking();
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const r = await fetch(`${API}/api/chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message: text, history: chatHistory.slice(-6)})
+    });
+    const d = await r.json();
+    document.getElementById('thinking')?.remove();
+
+    if (!r.ok) throw new Error(d.detail || 'Error');
+
+    addMsg('ai', d.reply);
+    chatHistory.push({role:'user', content:text});
+    chatHistory.push({role:'assistant', content:d.reply});
+
+    // Intent display
+    if (d.intent) {
+      document.getElementById('intentDisplay').innerHTML =
+        `<span class="intent-tag">🧠 intent: ${d.intent}</span>` +
+        (d.sentiment ? `<span class="intent-tag">💭 ${d.sentiment}</span>` : '') +
+        (d.expression ? `<span class="intent-tag">😊 ${d.expression}</span>` : '');
+    }
+
+    // Auto-fill TTS
+    if (!document.getElementById('ttsInput').value)
+      document.getElementById('ttsInput').value = d.reply.replace(/\*\*/g,'').slice(0,300);
+
+    // Refresh memory after chat
+    refreshMemory();
+
+    // If goal/plan intent, refresh
+    if (d.intent === 'goal' || text.toLowerCase().includes('goal')) refreshGoals();
+
+  } catch(e) {
+    document.getElementById('thinking')?.remove();
+    addMsg('ai', '❌ Error: ' + e.message + '\n\nक्या Python server चल रहा है? (python main.py)');
+  }
+
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+</script>
+</body>
+</html>
